@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etl-worker
+  namespace: etl-demo
+  labels:
+    app: etl-demo
+    role: worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: etl-demo
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: etl-demo
+        role: worker
+    spec:
+      containers:
+        - name: worker
+          image: etl-worker:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: WORK_LOOP_SECONDS
+              value: "2"
+            - name: CPU_BURN_MS
+              value: "150"
+            - name: SLEEP_JITTER_MS
+              value: "200"
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"

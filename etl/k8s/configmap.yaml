@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etl-settings
+  namespace: etl-demo
+  labels:
+    app: etl-demo
+    component: settings
+    grafana_dashboard: "0"
+data:
+  workerCount: "3"
