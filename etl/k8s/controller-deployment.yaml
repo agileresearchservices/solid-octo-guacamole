@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etl-controller
+  namespace: etl-demo
+  labels:
+    app: etl-demo
+    role: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: etl-demo
+      role: controller
+  template:
+    metadata:
+      labels:
+        app: etl-demo
+        role: controller
+    spec:
+      containers:
+        - name: controller
+          image: etl-controller:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TASK_INTERVAL_SECONDS
+              value: "5"
+            - name: TASK_BATCH_SIZE
+              value: "4"
+            - name: WORKER_COUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: etl-settings
+                  key: workerCount
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
