@@ -12,16 +12,21 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update >/dev/null
 
 echo "Installing kube-prometheus-stack..."
+echo "(This may take 2-3 minutes on first install. Please wait...)"
+
+# Use longer timeout for kubeadm clusters
 helm upgrade --install "${RELEASE}" prometheus-community/kube-prometheus-stack \
   --namespace "${NAMESPACE}" \
   --values "${VALUES_FILE}" \
-  --wait
+  --timeout 15m
 
+echo ""
 echo "Applying Grafana dashboard ConfigMap..."
 kubectl apply -f "$(dirname "$0")/dashboard-configmap.yaml"
 
+echo ""
 cat <<'EOF'
-Monitoring deployed.
+✓ Monitoring deployed successfully!
 Grafana service: kube-prometheus-grafana (namespace monitoring)
 Default credentials: admin / admin
 Use port-forward: kubectl -n monitoring port-forward svc/kube-prometheus-grafana 3000:80

@@ -60,24 +60,49 @@ make port-forward-grafana
 ```
 The one-shot `make up` target performs steps 1–4.
 
-## Using an existing cluster (e.g., kubeadm)
-You can target any reachable Kubernetes cluster instead of kind:
+## Quick start (existing kubeadm cluster)
+If you already have a Kubernetes cluster running (e.g., created with kubeadm), use this workflow instead:
 
-1. Ensure your current kubeconfig context points at the cluster you want (e.g., your kubeadm cluster).
-2. Build images with an optional registry prefix and push them to a registry visible to the cluster:
-   ```bash
-   export IMAGE_PREFIX="myregistry.example.com/etl-demo/"
-   make build-images
-   docker push ${IMAGE_PREFIX}etl-controller:local
-   docker push ${IMAGE_PREFIX}etl-worker:local
-   ```
-3. Skip kind image loading by setting `LOAD_WITH_KIND=0`:
-   ```bash
-   make LOAD_WITH_KIND=0 deploy-monitoring
-   IMAGE_PREFIX=${IMAGE_PREFIX} make LOAD_WITH_KIND=0 deploy-etl
-   ```
-   The `deploy_etl.sh` script will automatically apply the prefix to the controller/worker Deployments after they are created.
-4. Port-forward Grafana the same way: `make port-forward-grafana`.
+```bash
+# 1) Verify your kubeconfig context points to your cluster
+kubectl config current-context
+
+# 2) Build ETL images locally
+make build-images
+
+# 3) Push images to a registry accessible by your cluster
+#    (or use a local registry if your cluster can access it)
+export IMAGE_PREFIX="myregistry.example.com/etl-demo/"
+docker push ${IMAGE_PREFIX}etl-controller:local
+docker push ${IMAGE_PREFIX}etl-worker:local
+
+# 4) Deploy Prometheus + Grafana
+make deploy-monitoring
+
+# 5) Deploy the ETL controller and workers with the registry prefix
+IMAGE_PREFIX=${IMAGE_PREFIX} make LOAD_WITH_KIND=0 deploy-etl
+
+# 6) Port-forward Grafana (visit http://localhost:3000)
+make port-forward-grafana
+# login: admin / admin
+```
+
+Alternatively, if you're using a local registry or the cluster can pull from Docker Desktop's local images:
+```bash
+make build-images
+make LOAD_WITH_KIND=0 deploy-monitoring
+make LOAD_WITH_KIND=0 deploy-etl
+make port-forward-grafana
+```
+
+## Using an existing cluster (detailed reference)
+For more details on targeting an existing Kubernetes cluster:
+
+- Ensure your `kubectl config current-context` points to your target cluster.
+- Build images locally with `make build-images`.
+- If your cluster cannot pull from Docker Desktop's local registry, push images to a registry and set `IMAGE_PREFIX` before deploying.
+- Use `LOAD_WITH_KIND=0` to skip the `kind load` step: `make LOAD_WITH_KIND=0 deploy-monitoring` and `IMAGE_PREFIX=... make LOAD_WITH_KIND=0 deploy-etl`.
+- The `deploy_etl.sh` script automatically applies the `IMAGE_PREFIX` to the controller/worker Deployments.
 
 ## Workload overview
 - **Controller Deployment** (`etl-controller`): emits synthetic task logs every few seconds to simulate dispatching ETL jobs. Labeled with `app=etl-demo, role=controller`.

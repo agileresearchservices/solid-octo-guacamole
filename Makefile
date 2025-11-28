@@ -3,6 +3,7 @@ ETL_NAMESPACE ?= etl-demo
 MON_NS ?= monitoring
 IMAGE_PREFIX ?=
 LOAD_WITH_KIND ?= 1
+SKIP_CLUSTER_CREATE ?= 0
 
 CONTROLLER_IMAGE := $(IMAGE_PREFIX)etl-controller:local
 WORKER_IMAGE := $(IMAGE_PREFIX)etl-worker:local
@@ -11,6 +12,8 @@ WORKER_IMAGE := $(IMAGE_PREFIX)etl-worker:local
 .PHONY: test
 
 up: cluster-create build-images load-images deploy-monitoring deploy-etl
+
+up-existing: build-images load-images deploy-monitoring deploy-etl
 
 down: cluster-delete
 
