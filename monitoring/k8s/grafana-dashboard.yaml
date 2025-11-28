@@ -16,301 +16,303 @@ data:
         options:
           path: /var/lib/grafana/dashboards
 
-  demo-dashboard.json: |
+  cluster-dashboard.json: |
     {
       "annotations": {
         "list": []
       },
       "editable": true,
-      "gnetId": null,
+      "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
       "id": null,
       "links": [],
+      "liveNow": false,
       "panels": [
         {
+          "type": "stat",
+          "title": "Ready Nodes",
+          "id": 1,
           "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": true
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            }
-          },
           "gridPos": {
-            "h": 8,
-            "w": 12,
+            "h": 4,
+            "w": 4,
             "x": 0,
             "y": 0
           },
-          "id": 1,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "single"
-            }
-          },
           "targets": [
             {
-              "expr": "rate(app_cpu_burn_seconds_total[1m])",
-              "refId": "A",
-              "legendFormat": "CPU Burn Rate"
-            }
-          ],
-          "title": "CPU Burn Rate",
-          "type": "timeseries"
-        },
-        {
-          "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 100000000
-                  },
-                  {
-                    "color": "red",
-                    "value": 200000000
-                  }
-                ]
-              },
-              "unit": "bytes"
-            }
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 2,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": ""
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
-          },
-          "targets": [
-            {
-              "expr": "app_memory_allocated_bytes",
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
               "refId": "A"
             }
           ],
-          "title": "Memory Allocated",
-          "type": "gauge"
-        },
-        {
-          "datasource": "Prometheus",
           "fieldConfig": {
             "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": true
-              },
-              "mappings": [],
+              "unit": "none",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
                   }
                 ]
-              },
-              "unit": "ops"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Deployments Ready",
+          "id": 2,
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 4,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_deployment_status_replicas_ready)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none"
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Pods by Phase",
+          "id": 3,
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 6,
+            "w": 16,
+            "x": 8,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum by (phase) (kube_pod_status_phase)",
+              "refId": "A",
+              "legendFormat": "{{phase}}"
+            }
+          ],
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
             }
           },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none"
+            },
+            "overrides": []
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Cluster CPU Usage (cores)",
+          "id": 4,
+          "datasource": "Prometheus",
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 8
+            "y": 6
           },
-          "id": 3,
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{image!=\"\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "CPU cores used"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
           "options": {
             "legend": {
-              "calcs": [],
               "displayMode": "list",
               "placement": "bottom"
             },
             "tooltip": {
               "mode": "single"
             }
-          },
-          "targets": [
-            {
-              "expr": "rate(app_work_cycles_total[1m])",
-              "refId": "A",
-              "legendFormat": "Work Cycles/sec"
-            }
-          ],
-          "title": "Work Cycles Rate",
-          "type": "timeseries"
+          }
         },
         {
+          "type": "timeseries",
+          "title": "Cluster Memory (bytes in use)",
+          "id": 5,
           "datasource": "Prometheus",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "tooltip": false,
-                  "viz": false,
-                  "legend": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": true
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "s"
-            }
-          },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 6
           },
-          "id": 4,
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{image!=\"\"})",
+              "refId": "A",
+              "legendFormat": "Working set"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
           "options": {
             "legend": {
-              "calcs": ["mean", "max"],
               "displayMode": "list",
               "placement": "bottom"
             },
             "tooltip": {
               "mode": "single"
             }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Node CPU Utilization %",
+          "id": 6,
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
           },
           "targets": [
             {
-              "expr": "histogram_quantile(0.50, rate(app_cycle_duration_seconds_bucket[1m]))",
+              "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
               "refId": "A",
-              "legendFormat": "p50"
-            },
-            {
-              "expr": "histogram_quantile(0.95, rate(app_cycle_duration_seconds_bucket[1m]))",
-              "refId": "B",
-              "legendFormat": "p95"
-            },
-            {
-              "expr": "histogram_quantile(0.99, rate(app_cycle_duration_seconds_bucket[1m]))",
-              "refId": "C",
-              "legendFormat": "p99"
+              "legendFormat": "{{instance}}"
             }
           ],
-          "title": "Cycle Duration Percentiles",
-          "type": "timeseries"
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Filesystem Free (root mount)",
+          "id": 7,
+          "datasource": "Prometheus",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "targets": [
+            {
+              "expr": "sum by (instance) (node_filesystem_avail_bytes{mountpoint=\"/\",fstype!~\"tmpfs|overlay\"})",
+              "refId": "A",
+              "legendFormat": "{{instance}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          }
         }
       ],
-      "schemaVersion": 27,
+      "refresh": "30s",
+      "schemaVersion": 38,
       "style": "dark",
-      "tags": ["demo"],
+      "tags": [
+        "kubernetes",
+        "cluster",
+        "prometheus"
+      ],
       "templating": {
         "list": []
       },
       "time": {
-        "from": "now-15m",
+        "from": "now-30m",
         "to": "now"
       },
-      "timepicker": {},
       "timezone": "",
-      "title": "Demo App Metrics",
-      "uid": "demo-app",
-      "version": 0
+      "title": "Kubernetes Cluster Overview",
+      "uid": "k8s-cluster-overview",
+      "version": 1
     }

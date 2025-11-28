@@ -77,8 +77,8 @@ spec:
         configMap:
           name: grafana-dashboards
           items:
-          - key: demo-dashboard.json
-            path: demo-dashboard.json
+          - key: cluster-dashboard.json
+            path: cluster-dashboard.json
 ---
 apiVersion: v1
 kind: Service

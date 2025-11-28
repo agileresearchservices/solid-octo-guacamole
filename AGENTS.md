@@ -1,31 +1,27 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `app/` contains the Python demo service (`src/main.py`), Dockerfile, and Kubernetes manifests under `app/k8s/`. The service exposes `/metrics` and `/health`.
-- `monitoring/` holds Prometheus and Grafana manifests in `monitoring/k8s/` plus a deployment helper script.
-- `cluster/` has Minikube lifecycle scripts (`create_cluster.sh`, `delete_cluster.sh`).
-- `Makefile` wraps common flows; `README.md` provides the walkthrough.
+- `monitoring/` holds Prometheus, exporters, and Grafana manifests under `monitoring/k8s/`, plus the deployment helper script.
+- `cluster/` contains Minikube lifecycle scripts (`create_cluster.sh`, `delete_cluster.sh`).
+- `Makefile` wraps the common flows; `README.md` documents setup and usage.
 
 ## Build, Test, and Development Commands
-- One-shot bring-up: `make up` (creates cluster, builds image inside Minikube, deploys app + monitoring).
-- Lifecycle: `make cluster-create` / `make cluster-delete` to manage the Minikube cluster named `demo-cluster`.
-- App image: `make build-image` (uses `minikube docker-env`), `make load-image` (noop for in-cluster build).
-- Deployments: `make deploy-app`, `make deploy-monitoring`.
-- Port-forwarding: `make port-forward-grafana`, `make port-forward-prometheus`, `make port-forward-app`.
-- Quick syntax check: `make test` (runs `python -m compileall app`); unit tests: `make test-unit` (pytest over `app/tests/`). Install dev deps via `pip install -r requirements-dev.txt`.
+- One-shot bring-up: `make up` (creates Minikube and deploys monitoring).
+- Lifecycle: `make cluster-create` / `make cluster-delete` to manage the `demo-cluster` profile.
+- Deploy stack: `make deploy-monitoring`.
+- Port-forwarding: `make port-forward-grafana`, `make port-forward-prometheus`.
+- No app build/test steps remain; edits are primarily YAML.
 
 ## Coding Style & Naming Conventions
-- Python: prefer PEP 8 (4-space indent, snake_case functions/vars). Keep logging informative; avoid noisy debug logs by default.
-- Kubernetes: namespaces `demo` (app) and `monitoring`; label `app=demo-app`, `app=prometheus`, `app=grafana`. Keep new manifests alongside peers in `*/k8s/`.
-- Env tuning lives in `app/k8s/deployment.yaml` (e.g., `WORK_LOOP_SECONDS`, `CPU_BURN_MS`, `MEMORY_ALLOC_MB`); document any new env vars in the manifest comments.
+- Kubernetes: keep manifests minimal and namespaced to `monitoring`; label resources with `app=` for selectors (e.g., `prometheus`, `grafana`, `node-exporter`).
+- Use consistent indentation (2 spaces) in YAML; group related resources in the same file when they deploy together.
+- Prefer small, composable manifests in `monitoring/k8s/` with clear comments when behavior is non-obvious.
 
 ## Testing Guidelines
-- Add pytest cases under `app/tests/` named `test_*.py`; use `make test-unit` locally.
-- For functional validation, run the service locally with `python app/src/main.py` (exposes port 8000) or deploy to Minikube and curl `/metrics`.
-- Before merging, run `make test` and `make test-unit`. If manifests change, smoke-test on Minikube: `make up` then check `kubectl -n monitoring get pods` and `kubectl -n demo get pods`.
+- Smoke-test changes on Minikube: `make up`, then verify `kubectl -n monitoring get pods`, Prometheus targets (`/targets`), and Grafana dashboard data.
+- For dashboard tweaks, capture a quick screenshot and note the Prometheus queries you changed.
 
 ## Commit & Pull Request Guidelines
-- Git history uses short, imperative subjects (e.g., “Add Makefile test target”); follow that style, aim for <72 chars.
-- Use the PR template in `.github/pull_request_template.md`: describe changes, link issues, and list tests run.
-- Note how you tested (commands run, clusters used) and attach screenshots for UI/dashboard tweaks (Grafana panels).
-- For YAML changes, mention namespaces touched and any new ports/credentials. Avoid committing secrets; prefer env vars or ConfigMaps.
+- Use short, imperative commit subjects (e.g., “Add kubelet cadvisor scrape”); aim for <72 chars.
+- Follow `.github/pull_request_template.md`: describe changes, link issues, and list tests run (commands, environments).
+- Mention namespaces touched and any new RBAC, ports, or credentials. Do not commit secrets; keep admin creds in Kubernetes Secrets as shown.

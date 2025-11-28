@@ -6,9 +6,15 @@ NAMESPACE="monitoring"
 echo "Creating namespace ${NAMESPACE}..."
 kubectl get ns "${NAMESPACE}" >/dev/null 2>&1 || kubectl create namespace "${NAMESPACE}"
 
-echo "Deploying Prometheus..."
+echo "Deploying Prometheus core..."
 kubectl apply -f "$(dirname "$0")/k8s/prometheus-config.yaml"
 kubectl apply -f "$(dirname "$0")/k8s/prometheus.yaml"
+
+echo "Deploying Kubernetes exporters..."
+kubectl apply -f "$(dirname "$0")/k8s/kube-state-metrics.yaml"
+kubectl apply -f "$(dirname "$0")/k8s/node-exporter.yaml"
+kubectl -n ${NAMESPACE} rollout status deployment/kube-state-metrics --timeout=120s
+kubectl -n ${NAMESPACE} rollout status daemonset/node-exporter --timeout=120s
 
 echo "Deploying Grafana..."
 kubectl apply -f "$(dirname "$0")/k8s/grafana-datasource.yaml"
@@ -30,4 +36,4 @@ echo ""
 echo "Grafana: kubectl -n ${NAMESPACE} port-forward svc/grafana 3000:3000"
 echo "  Then visit: http://localhost:3000"
 echo "  Login: admin / admin"
-echo "  Dashboard: 'Demo App Metrics'"
+echo "  Dashboard: 'Kubernetes Cluster Overview'"

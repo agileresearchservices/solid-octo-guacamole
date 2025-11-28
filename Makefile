@@ -1,15 +1,11 @@
 CLUSTER_NAME ?= demo-cluster
-APP_NAMESPACE ?= demo
 MON_NS ?= monitoring
-IMAGE_PREFIX ?=
-LOAD_IMAGES ?= 1
 
-APP_IMAGE := $(IMAGE_PREFIX)demo-app:local
+TARGETS := up down cluster-create cluster-delete deploy-monitoring port-forward-grafana port-forward-prometheus
+.PHONY: $(TARGETS)
 
-.PHONY: up down cluster-create cluster-delete build-image load-image deploy-app deploy-monitoring port-forward-grafana port-forward-prometheus test test-unit
-
-# One-shot setup: create cluster, build, load, and deploy everything
-up: cluster-create build-image load-image deploy-app deploy-monitoring
+# One-shot setup: create cluster and deploy monitoring stack
+up: cluster-create deploy-monitoring
 
 # Tear down the cluster
 down: cluster-delete
@@ -21,33 +17,7 @@ cluster-create:
 cluster-delete:
 	./cluster/delete_cluster.sh
 
-# Build demo app image directly in Minikube's Docker
-build-image:
-	@echo "Building image in Minikube's Docker daemon..."
-	@eval $$(minikube -p $(CLUSTER_NAME) docker-env) && docker build -t $(APP_IMAGE) ./app
-
-# Load image into Minikube (not needed when using minikube docker-env, but kept for compatibility)
-load-image:
-	@if [ "$(LOAD_IMAGES)" = "0" ]; then \
-		echo "Skipping image load (LOAD_IMAGES=0)"; \
-		exit 0; \
-	fi
-	@if ! minikube -p $(CLUSTER_NAME) status >/dev/null 2>&1; then \
-		echo "Cluster $(CLUSTER_NAME) not running; skipping image load."; \
-		exit 0; \
-	fi
-	@if docker image inspect $(APP_IMAGE) >/dev/null 2>&1; then \
-		echo "Loading host image into Minikube..."; \
-		minikube image load $(APP_IMAGE) -p $(CLUSTER_NAME); \
-	else \
-		echo "Host image $(APP_IMAGE) not found; assuming it already exists in Minikube's Docker. Skipping load."; \
-	fi
-
-# Deploy demo application
-deploy-app:
-	./app/deploy.sh
-
-# Deploy monitoring stack (Prometheus + Grafana)
+# Deploy monitoring stack (Prometheus + exporters + Grafana)
 deploy-monitoring:
 	./monitoring/deploy.sh
 
@@ -58,15 +28,3 @@ port-forward-grafana:
 # Port-forward Prometheus to localhost:9090
 port-forward-prometheus:
 	kubectl -n $(MON_NS) port-forward svc/prometheus 9090:9090
-
-# Port-forward demo app metrics to localhost:8000
-port-forward-app:
-	kubectl -n $(APP_NAMESPACE) port-forward svc/demo-app 8000:8000
-
-# Syntax check for the Python app
-test:
-	python -m compileall app
-
-# Unit tests (pytest)
-test-unit:
-	python -m pytest app/tests
