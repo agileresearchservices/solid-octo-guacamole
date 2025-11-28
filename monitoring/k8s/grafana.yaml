@@ -8,21 +8,6 @@ stringData:
   GF_SECURITY_ADMIN_USER: admin
   GF_SECURITY_ADMIN_PASSWORD: admin
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-custom
-  namespace: monitoring
-data:
-  custom.css: |
-    /* Hide unused cloud toggles */
-    a[aria-label="OnCall"],
-    a[aria-label="Terraform"],
-    a[href*="oncall"],
-    a[href*="terraform"] {
-      display: none !important;
-    }
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -56,8 +41,6 @@ spec:
           value: "grafana-oncall-app,grafana-terraform-app"
         - name: GF_PLUGINS_DISABLE_PLUGINS
           value: "grafana-oncall-app,grafana-terraform-app"
-        - name: GF_PLUGIN_CATALOG_URL
-          value: ""
         - name: GF_PLUGINS_PLUGIN_CATALOG_URL
           value: ""
         - name: GF_PLUGINS_PLUGIN_ADMIN_ENABLED
@@ -69,9 +52,6 @@ spec:
           mountPath: /etc/grafana/provisioning/dashboards
         - name: dashboards
           mountPath: /var/lib/grafana/dashboards
-        - name: custom-css
-          mountPath: /usr/share/grafana/public/css/custom.css
-          subPath: custom.css
         resources:
           limits:
             cpu: 200m
@@ -107,12 +87,6 @@ spec:
           items:
           - key: cluster-dashboard.json
             path: cluster-dashboard.json
-      - name: custom-css
-        configMap:
-          name: grafana-custom
-          items:
-          - key: custom.css
-            path: custom.css
 ---
 apiVersion: v1
 kind: Service
