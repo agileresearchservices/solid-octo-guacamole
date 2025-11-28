@@ -41,6 +41,10 @@ spec:
           value: "grafana-oncall-app,grafana-terraform-app"
         - name: GF_PLUGINS_DISABLE_PLUGINS
           value: "grafana-oncall-app,grafana-terraform-app"
+        - name: GF_PLUGIN_CATALOG_URL
+          value: ""
+        - name: GF_PLUGIN_ADMIN_ENABLED
+          value: "false"
         volumeMounts:
         - name: datasource
           mountPath: /etc/grafana/provisioning/datasources
