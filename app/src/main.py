@@ -65,8 +65,8 @@ def worker_loop():
     pod_name = os.getenv("POD_NAME", "demo-app")
     logging.info(f"Worker {pod_name} starting. CPU burn={CPU_BURN_MS}ms, memory={MEMORY_ALLOC_MB}MB, loop={WORK_LOOP_SECONDS}s")
 
-    # Keep reference to allocated memory to prevent GC
-    memory_block = None
+    # Keep reference to allocated memory to prevent GC and keep gauge stable
+    memory_block = allocate_memory(MEMORY_ALLOC_MB)
 
     while True:
         cycle_start = time.time()
@@ -75,8 +75,11 @@ def worker_loop():
         burn_time = burn_cpu(CPU_BURN_MS)
         cpu_burn_total.inc(burn_time)
 
-        # Allocate memory
-        memory_block = allocate_memory(MEMORY_ALLOC_MB)
+        # Ensure memory remains allocated; top up if GC cleaned it up
+        if memory_block is None:
+            memory_block = allocate_memory(MEMORY_ALLOC_MB)
+        else:
+            memory_allocated.set(len(memory_block))
 
         # Increment work cycles counter
         work_cycles_total.inc()

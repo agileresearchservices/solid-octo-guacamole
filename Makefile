@@ -6,7 +6,7 @@ LOAD_IMAGES ?= 1
 
 APP_IMAGE := $(IMAGE_PREFIX)demo-app:local
 
-.PHONY: up down cluster-create cluster-delete build-image load-image deploy-app deploy-monitoring port-forward-grafana port-forward-prometheus test
+.PHONY: up down cluster-create cluster-delete build-image load-image deploy-app deploy-monitoring port-forward-grafana port-forward-prometheus test test-unit
 
 # One-shot setup: create cluster, build, load, and deploy everything
 up: cluster-create build-image load-image deploy-app deploy-monitoring
@@ -28,7 +28,20 @@ build-image:
 
 # Load image into Minikube (not needed when using minikube docker-env, but kept for compatibility)
 load-image:
-	@echo "Image already in Minikube's Docker (built with minikube docker-env)"
+	@if [ "$(LOAD_IMAGES)" = "0" ]; then \
+		echo "Skipping image load (LOAD_IMAGES=0)"; \
+		exit 0; \
+	fi
+	@if ! minikube -p $(CLUSTER_NAME) status >/dev/null 2>&1; then \
+		echo "Cluster $(CLUSTER_NAME) not running; skipping image load."; \
+		exit 0; \
+	fi
+	@if docker image inspect $(APP_IMAGE) >/dev/null 2>&1; then \
+		echo "Loading host image into Minikube..."; \
+		minikube image load $(APP_IMAGE) -p $(CLUSTER_NAME); \
+	else \
+		echo "Host image $(APP_IMAGE) not found; assuming it already exists in Minikube's Docker. Skipping load."; \
+	fi
 
 # Deploy demo application
 deploy-app:
@@ -53,3 +66,7 @@ port-forward-app:
 # Syntax check for the Python app
 test:
 	python -m compileall app
+
+# Unit tests (pytest)
+test-unit:
+	python -m pytest app/tests
