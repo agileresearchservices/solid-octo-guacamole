@@ -132,7 +132,8 @@ data:
           "id": 67,
           "panels": [],
           "title": "Overview",
-          "type": "row"
+          "type": "row",
+          "description": "Top-level cluster summary cards."
         },
         {
           "datasource": {
@@ -230,7 +231,8 @@ data:
             }
           ],
           "title": "Global CPU  Usage",
-          "type": "bargauge"
+          "type": "bargauge",
+          "description": "Real CPU usage vs node cores; Requests sum pod requests; Limits sum CPU limits."
         },
         {
           "datasource": {
@@ -331,7 +333,8 @@ data:
             }
           ],
           "title": "Global RAM Usage",
-          "type": "bargauge"
+          "type": "bargauge",
+          "description": "Memory used vs node memory; Requests sum pod requests; Limits sum memory limits."
         },
         {
           "datasource": {
@@ -396,7 +399,8 @@ data:
             }
           ],
           "title": "Nodes",
-          "type": "stat"
+          "type": "stat",
+          "description": "Count of nodes reporting kube_node_info."
         },
         {
           "datasource": {
@@ -641,7 +645,8 @@ data:
             }
           ],
           "title": "Kubernetes Resource Count",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Counts for namespaces, nodes, running pods/containers, services/endpoints/ingress, deployments/statefulsets/daemonsets, PVCs, HPAs, configmaps, secrets, network policies."
         },
         {
           "datasource": {
@@ -703,7 +708,8 @@ data:
             }
           ],
           "title": "Namespaces",
-          "type": "stat"
+          "type": "stat",
+          "description": "Current namespace count."
         },
         {
           "datasource": {
@@ -805,7 +811,8 @@ data:
             }
           ],
           "title": "CPU Usage",
-          "type": "stat"
+          "type": "stat",
+          "description": "Cluster CPU used cores, requested cores, limits, and total capacity."
         },
         {
           "datasource": {
@@ -907,7 +914,8 @@ data:
             }
           ],
           "title": "RAM Usage",
-          "type": "stat"
+          "type": "stat",
+          "description": "Cluster memory used bytes, requested bytes, limits, and total capacity."
         },
         {
           "datasource": {
@@ -969,7 +977,8 @@ data:
             }
           ],
           "title": "Running Pods",
-          "type": "stat"
+          "type": "stat",
+          "description": "Pods in Running phase."
         },
         {
           "collapsed": false,
@@ -986,7 +995,8 @@ data:
           "id": 71,
           "panels": [],
           "title": "Resources",
-          "type": "row"
+          "type": "row",
+          "description": "CPU and memory breakdowns by namespace and node."
         },
         {
           "datasource": {
@@ -1107,7 +1117,8 @@ data:
               }
             }
           ],
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "CPU usage percentage across all nodes."
         },
         {
           "datasource": {
@@ -1228,7 +1239,8 @@ data:
               }
             }
           ],
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Memory usage percentage across all nodes."
         },
         {
           "datasource": {
@@ -1339,7 +1351,8 @@ data:
             }
           ],
           "title": "CPU Utilization by namespace",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "CPU usage per namespace (seconds/sec)."
         },
         {
           "datasource": {
@@ -1444,7 +1457,8 @@ data:
             }
           ],
           "title": "Memory Utilization by namespace",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Working set memory per namespace."
         },
         {
           "datasource": {
@@ -1550,7 +1564,8 @@ data:
             }
           ],
           "title": "CPU Utilization by instance",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "CPU usage per node."
         },
         {
           "datasource": {
@@ -1656,14 +1671,15 @@ data:
             }
           ],
           "title": "Memory Utilization by instance",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Memory used per node."
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "No data is generally a good thing here.",
+          "description": "CFS throttled seconds per namespace (empty means none).",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1773,7 +1789,7 @@ data:
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "No data is generally a good thing here.",
+          "description": "CFS throttled seconds per node (empty means none).",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1889,7 +1905,8 @@ data:
           "id": 86,
           "panels": [],
           "title": "Kubernetes",
-          "type": "row"
+          "type": "row",
+          "description": "Pod quality and status breakdowns."
         },
         {
           "datasource": {
@@ -2006,7 +2023,8 @@ data:
             }
           ],
           "title": "Kubernetes Pods QoS classes",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Pod counts grouped by QoS class vs total pods."
         },
         {
           "datasource": {
@@ -2111,14 +2129,15 @@ data:
             }
           ],
           "title": "Kubernetes Pods Status Reason",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Pod counts grouped by status reason."
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "No data is generally a good thing here.",
+          "description": "Container OOM kill events per namespace.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2224,7 +2243,7 @@ data:
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "No data is generally a good thing here.",
+          "description": "Container restart counts per namespace.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2340,14 +2359,15 @@ data:
           "id": 69,
           "panels": [],
           "title": "Network",
-          "type": "row"
+          "type": "row",
+          "description": "Network throughput and drops per namespace and node."
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Dropped noisy virtual devices for readability.",
+          "description": "Rx/tx bytes per device (virtual interfaces filtered).",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2566,7 +2586,8 @@ data:
           ],
           "title": "Network Saturation - Packets dropped",
           "transformations": [],
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Packet drops: rx positive, tx negative."
         },
         {
           "datasource": {
@@ -2678,7 +2699,8 @@ data:
             }
           ],
           "title": "Network Received by namespace",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Network rx bytes (+) and tx bytes (-) per namespace."
         },
         {
           "datasource": {
@@ -2790,14 +2812,15 @@ data:
             }
           ],
           "title": "Total Network Received (with all virtual devices) by instance",
-          "type": "timeseries"
+          "type": "timeseries",
+          "description": "Node rx/tx bytes including virtual interfaces."
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Dropped noisy virtual devices for readability.",
+          "description": "Node rx/tx bytes excluding loopback and virtual devices.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2910,7 +2933,7 @@ data:
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Dropped noisy virtual devices for readability.",
+          "description": "Loopback rx/tx bytes per node.",
           "fieldConfig": {
             "defaults": {
               "color": {
