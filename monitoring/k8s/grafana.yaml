@@ -39,6 +39,8 @@ spec:
           value: "/etc/grafana/provisioning"
         - name: GF_PLUGIN_CATALOG_HIDDEN_PLUGINS
           value: "grafana-oncall-app,grafana-terraform-app"
+        - name: GF_PLUGINS_DISABLE_PLUGINS
+          value: "grafana-oncall-app,grafana-terraform-app"
         volumeMounts:
         - name: datasource
           mountPath: /etc/grafana/provisioning/datasources
