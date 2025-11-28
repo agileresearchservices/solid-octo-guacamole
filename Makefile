@@ -1,49 +1,55 @@
-CLUSTER_NAME ?= etl-demo
-ETL_NAMESPACE ?= etl-demo
+CLUSTER_NAME ?= demo-cluster
+APP_NAMESPACE ?= demo
 MON_NS ?= monitoring
 IMAGE_PREFIX ?=
-LOAD_WITH_KIND ?= 1
-SKIP_CLUSTER_CREATE ?= 0
+LOAD_IMAGES ?= 1
 
-CONTROLLER_IMAGE := $(IMAGE_PREFIX)etl-controller:local
-WORKER_IMAGE := $(IMAGE_PREFIX)etl-worker:local
+APP_IMAGE := $(IMAGE_PREFIX)demo-app:local
 
-.PHONY: up down cluster-create cluster-delete build-images load-images deploy-monitoring deploy-etl port-forward-grafana
-.PHONY: test
+.PHONY: up down cluster-create cluster-delete build-image load-image deploy-app deploy-monitoring port-forward-grafana port-forward-prometheus test
 
-up: cluster-create build-images load-images deploy-monitoring deploy-etl
+# One-shot setup: create cluster, build, load, and deploy everything
+up: cluster-create build-image load-image deploy-app deploy-monitoring
 
-up-existing: build-images load-images deploy-monitoring deploy-etl
-
+# Tear down the cluster
 down: cluster-delete
 
+# Cluster lifecycle
 cluster-create:
 	./cluster/create_cluster.sh
 
 cluster-delete:
 	./cluster/delete_cluster.sh
 
-build-images:
-	docker build -t $(CONTROLLER_IMAGE) ./etl/controller
-	docker build -t $(WORKER_IMAGE) ./etl/worker
+# Build demo app image directly in Minikube's Docker
+build-image:
+	@echo "Building image in Minikube's Docker daemon..."
+	@eval $$(minikube -p $(CLUSTER_NAME) docker-env) && docker build -t $(APP_IMAGE) ./app
 
-load-images:
-ifeq ($(LOAD_WITH_KIND),1)
-	kind load docker-image $(CONTROLLER_IMAGE) --name $(CLUSTER_NAME)
-	kind load docker-image $(WORKER_IMAGE) --name $(CLUSTER_NAME)
-else
-	@echo "Skipping kind image load. Ensure $(CONTROLLER_IMAGE) and $(WORKER_IMAGE) are reachable by your cluster (push to a registry if needed)."
-endif
+# Load image into Minikube (not needed when using minikube docker-env, but kept for compatibility)
+load-image:
+	@echo "Image already in Minikube's Docker (built with minikube docker-env)"
 
+# Deploy demo application
+deploy-app:
+	./app/deploy.sh
+
+# Deploy monitoring stack (Prometheus + Grafana)
 deploy-monitoring:
-	./monitoring/deploy_monitoring.sh
+	./monitoring/deploy.sh
 
-deploy-etl:
-	IMAGE_PREFIX=$(IMAGE_PREFIX) ./etl/deploy_etl.sh
-
+# Port-forward Grafana to localhost:3000
 port-forward-grafana:
-	kubectl -n $(MON_NS) port-forward svc/kube-prometheus-grafana 3000:80
+	kubectl -n $(MON_NS) port-forward svc/grafana 3000:3000
 
-# Lightweight syntax check for the Python ETL components
+# Port-forward Prometheus to localhost:9090
+port-forward-prometheus:
+	kubectl -n $(MON_NS) port-forward svc/prometheus 9090:9090
+
+# Port-forward demo app metrics to localhost:8000
+port-forward-app:
+	kubectl -n $(APP_NAMESPACE) port-forward svc/demo-app 8000:8000
+
+# Syntax check for the Python app
 test:
-	python -m compileall etl
+	python -m compileall app

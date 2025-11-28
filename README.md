@@ -1,145 +1,236 @@
-# Kubernetes Monitoring Demo: ETL workload + Prometheus + Grafana
+# Minimal Kubernetes Monitoring Demo: Prometheus + Grafana
 
-This repo contains a fully reproducible local demo that provisions a kind-based Kubernetes cluster, runs a tiny ETL-like workload (controller + workers), and ships Kubernetes metrics to Prometheus/Grafana. After the setup completes, Grafana exposes a dashboard that plots CPU/memory by pod, by role, and for the entire namespace.
+This repo contains a fully reproducible local demo that provisions a Minikube cluster with a minimal monitoring stack. It demonstrates the simplest possible setup for Prometheus and Grafana in Kubernetes, perfect for learning and understanding the fundamentals.
 
-## Why kind?
-[kind](https://kind.sigs.k8s.io/) runs Kubernetes entirely inside Docker, which keeps the demo self-contained for laptops with Docker Desktop. The cluster spins up quickly, images can be loaded directly from the host without a registry, and no VM drivers or extra hypervisors are required (unlike some minikube configurations). If you already have a cluster (e.g., kubeadm), you can skip the kind steps and use that instead—see **Using an existing cluster** below.
+## Architecture
 
-## Repository layout
+**Ultra-minimal: Just 3 pods**
+
 ```
-cluster/                     # kind cluster config + lifecycle scripts
-  create_cluster.sh
-  delete_cluster.sh
-  kind-config.yaml
-etl/                         # ETL workloads + manifests
-  controller/
-    Dockerfile
-    src/main.py
-  worker/
-    Dockerfile
-    src/main.py
+┌─────────────────┐
+│  Demo App       │ ← Exposes custom metrics on /metrics
+│  (1 pod)        │    (CPU burn, memory, work cycles)
+└─────────────────┘
+         ↑
+         │ scrapes every 15s
+         │
+┌─────────────────┐
+│  Prometheus     │ ← Standalone deployment (no operator)
+│  (1 pod)        │
+└─────────────────┘
+         ↑
+         │ queries
+         │
+┌─────────────────┐
+│  Grafana        │ ← Pre-configured dashboard
+│  (1 pod)        │
+└─────────────────┘
+```
+
+## Why This Approach?
+
+- **Educational**: Every component is visible and understandable
+- **Minimal**: No Helm, no operators, no CRDs - just plain YAML
+- **Fast**: Deploys in ~30 seconds
+- **Standard**: Uses common Prometheus patterns (static scraping)
+- **Portable**: Works on any Kubernetes cluster
+
+## Repository Layout
+
+```
+app/                         # Demo application
+  src/main.py                # Python app with Prometheus metrics
+  Dockerfile
+  requirements.txt
   k8s/
     namespace.yaml
-    configmap.yaml
-    controller-deployment.yaml
-    worker-deployment.yaml
-  deploy_etl.sh
-monitoring/                  # Prometheus + Grafana deployment and dashboard
-  helm-values/kube-prometheus-values.yaml
-  grafana-dashboards/etl-k8s-dashboard.json
-  dashboard-configmap.yaml
-  deploy_monitoring.sh
-Makefile                     # Convenience targets (cluster create/delete, build/load images, deploy)
+    deployment.yaml          # App deployment + service
+  deploy.sh
+cluster/                     # Minikube cluster lifecycle
+  create_cluster.sh
+  delete_cluster.sh
+monitoring/                  # Monitoring stack
+  k8s/
+    prometheus-config.yaml   # Prometheus scrape config
+    prometheus.yaml          # Prometheus deployment + PVC
+    grafana-datasource.yaml  # Grafana datasource config
+    grafana-dashboard.yaml   # Pre-loaded dashboard
+    grafana.yaml             # Grafana deployment
+  deploy.sh
+Makefile                     # Convenience targets
 README.md
 ```
 
 ## Prerequisites
-- Docker / Docker Desktop
-- `kubectl`
-- `helm`
-- `kind` (only if you want the bundled local cluster)
 
-## Quick start (kind)
+- Docker
+- `kubectl`
+- `minikube`
+- Python 3 (for optional syntax checking)
+
+## Quick Start
+
 ```bash
-# 1) Create the cluster
+# 1) Create Minikube cluster (single node)
 make cluster-create
 
-# 2) Build ETL images and load them into kind
-make build-images
-make load-images
+# 2) Build and load demo app image
+make build-image
+make load-image
 
-# 3) Deploy Prometheus + Grafana (kube-prometheus-stack)
+# 3) Deploy demo application
+make deploy-app
+
+# 4) Deploy monitoring stack (Prometheus + Grafana)
 make deploy-monitoring
 
-# 4) Deploy the ETL controller and workers
-make deploy-etl
-
-# 5) Port-forward Grafana (visit http://localhost:3000)
+# 5) Access Grafana
 make port-forward-grafana
-# login: admin / admin
+# Visit http://localhost:3000
+# Login: admin / admin
+# Dashboard: "Demo App Metrics"
 ```
-The one-shot `make up` target performs steps 1–4.
 
-## Quick start (existing kubeadm cluster)
-If you already have a Kubernetes cluster running (e.g., created with kubeadm), use this workflow instead:
-
+**Or use the one-shot command:**
 ```bash
-# 1) Verify your kubeconfig context points to your cluster
-kubectl config current-context
-
-# 2) Build ETL images locally
-make build-images
-
-# 3) Push images to a registry accessible by your cluster
-#    (or use a local registry if your cluster can access it)
-export IMAGE_PREFIX="myregistry.example.com/etl-demo/"
-docker push ${IMAGE_PREFIX}etl-controller:local
-docker push ${IMAGE_PREFIX}etl-worker:local
-
-# 4) Deploy Prometheus + Grafana
-make deploy-monitoring
-
-# 5) Deploy the ETL controller and workers with the registry prefix
-IMAGE_PREFIX=${IMAGE_PREFIX} make LOAD_WITH_KIND=0 deploy-etl
-
-# 6) Port-forward Grafana (visit http://localhost:3000)
-make port-forward-grafana
-# login: admin / admin
+make up
 ```
 
-Alternatively, if you're using a local registry or the cluster can pull from Docker Desktop's local images:
+## What the Demo App Does
+
+The demo application:
+- Runs a continuous loop that burns CPU and allocates memory
+- Exposes Prometheus metrics on `/metrics` endpoint (port 8000)
+- Provides custom metrics:
+  - `app_cpu_burn_seconds_total` - Total CPU burn time
+  - `app_memory_allocated_bytes` - Current memory allocation
+  - `app_work_cycles_total` - Number of cycles completed
+  - `app_cycle_duration_seconds` - Histogram of cycle durations
+
+## Accessing the Components
+
+**Grafana:**
 ```bash
-make build-images
-make LOAD_WITH_KIND=0 deploy-monitoring
-make LOAD_WITH_KIND=0 deploy-etl
 make port-forward-grafana
+# Visit: http://localhost:3000
+# Login: admin / admin
 ```
 
-## Using an existing cluster (detailed reference)
-For more details on targeting an existing Kubernetes cluster:
+**Prometheus:**
+```bash
+make port-forward-prometheus
+# Visit: http://localhost:9090
+# Check targets: http://localhost:9090/targets
+```
 
-- Ensure your `kubectl config current-context` points to your target cluster.
-- Build images locally with `make build-images`.
-- If your cluster cannot pull from Docker Desktop's local registry, push images to a registry and set `IMAGE_PREFIX` before deploying.
-- Use `LOAD_WITH_KIND=0` to skip the `kind load` step: `make LOAD_WITH_KIND=0 deploy-monitoring` and `IMAGE_PREFIX=... make LOAD_WITH_KIND=0 deploy-etl`.
-- The `deploy_etl.sh` script automatically applies the `IMAGE_PREFIX` to the controller/worker Deployments.
+**Demo App Metrics:**
+```bash
+make port-forward-app
+# Visit: http://localhost:8000/metrics
+```
 
-## Workload overview
-- **Controller Deployment** (`etl-controller`): emits synthetic task logs every few seconds to simulate dispatching ETL jobs. Labeled with `app=etl-demo, role=controller`.
-- **Worker Deployment** (`etl-worker`): three replicas burn a bit of CPU, then sleep with jitter to produce observable metrics. Labeled with `app=etl-demo, role=worker`.
-- **Namespace**: everything ETL-related lives in `etl-demo`. Worker count is also published via the `etl-settings` ConfigMap so the controller can reference it.
+## Dashboard Panels
 
-### Images
-Images are simple Python apps built from `etl/controller` and `etl/worker`. They’re tagged `${IMAGE_PREFIX}etl-controller:local` and `${IMAGE_PREFIX}etl-worker:local` and loaded into kind with `kind load docker-image ...` (or pushed to your own registry when using an existing cluster).
+The pre-loaded Grafana dashboard shows:
+1. **CPU Burn Rate** - Rate of CPU burn time over time
+2. **Memory Allocated** - Current memory allocation (gauge)
+3. **Work Cycles Rate** - Work cycles per second
+4. **Cycle Duration Percentiles** - p50, p95, p99 latencies
 
-## Monitoring stack
-- Installed via `helm upgrade --install kube-prometheus ...` with overrides in `monitoring/helm-values/kube-prometheus-values.yaml`.
-- Grafana credentials: `admin / admin`.
-- Dashboard is auto-provisioned from `monitoring/dashboard-configmap.yaml` (picked up by the Grafana sidecar via the `grafana_dashboard: "1"` label).
-- Prometheus scrapes standard Kubernetes sources (kubelet/cAdvisor, kube-state-metrics), so pod CPU/memory metrics such as `container_cpu_usage_seconds_total` and `container_memory_working_set_bytes` are available automatically.
+## Tear Down
 
-## Grafana dashboard
-Dashboard name: **ETL Demo - Kubernetes** (`uid: etl-k8s`).
-
-**Filters:** namespace, role label, pod name.
-
-**Panels:**
-- Pod CPU (mCores): `rate(container_cpu_usage_seconds_total{namespace='$namespace', pod=~'$pod'}[5m]) * 1000` grouped by pod.
-- Pod Memory (MiB): `container_memory_working_set_bytes{namespace='$namespace', pod=~'$pod'} / 1024 / 1024` grouped by pod.
-- Worker/namespace aggregates for CPU and memory, plus role-level rollups for controller vs worker.
-
-After a couple of minutes, you should see both the controller and workers show activity; aggregated worker panels will reflect the sum of all worker pods.
-
-## Tear down
 ```bash
 make down
 ```
-This removes the kind cluster entirely. To redeploy, run `make up` again.
 
-## Future extension
-For long-term metric and log retention, you could add OpenSearch + OpenSearch Dashboards. A minimal approach would be to deploy the official Helm charts, ship container logs with Fluent Bit, and link the dashboards from Grafana. This demo keeps the scope focused on Prometheus + Grafana for simplicity.
+This removes the Minikube cluster entirely. To redeploy, run `make up` again.
+
+## Customization
+
+### Adjust Demo App Workload
+
+Edit `app/k8s/deployment.yaml` environment variables:
+- `WORK_LOOP_SECONDS` - Time between cycles (default: 5)
+- `CPU_BURN_MS` - CPU burn duration per cycle (default: 200)
+- `MEMORY_ALLOC_MB` - Memory to allocate (default: 50)
+
+### Adjust Prometheus Scrape Interval
+
+Edit `monitoring/k8s/prometheus-config.yaml`:
+```yaml
+global:
+  scrape_interval: 15s  # Change this
+```
+
+### Modify Dashboard
+
+The dashboard JSON is in `monitoring/k8s/grafana-dashboard.yaml`. Edit the `demo-dashboard.json` section to add new panels or modify queries.
+
+## How It Works
+
+### Prometheus Scraping
+
+Prometheus uses a simple static configuration to scrape the demo app:
+
+```yaml
+scrape_configs:
+  - job_name: 'demo-app'
+    static_configs:
+      - targets: ['demo-app.demo.svc.cluster.local:8000']
+```
+
+No service discovery, no annotations needed - just a direct target.
+
+### Grafana Provisioning
+
+Grafana is configured with:
+1. **Datasource provisioning** - Automatically connects to Prometheus
+2. **Dashboard provisioning** - Automatically loads the demo dashboard
+
+Both are ConfigMaps mounted into the Grafana pod.
+
+### Persistence
+
+Prometheus uses a PersistentVolumeClaim (5Gi) to retain metrics across pod restarts. Data retention is set to 24 hours.
 
 ## Troubleshooting
-- If Grafana shows no data, ensure Prometheus targets are healthy: `kubectl -n monitoring port-forward svc/kube-prometheus-prometheus 9090:9090` and check `/targets`.
-- If images are not found, rerun `make load-images` for kind or push the `${IMAGE_PREFIX}` images to your registry and redeploy with `IMAGE_PREFIX` set.
-- To tweak worker intensity, edit `etl/k8s/worker-deployment.yaml` environment variables (`CPU_BURN_MS`, `WORK_LOOP_SECONDS`).
+
+**Prometheus shows no targets:**
+- Check if demo app is running: `kubectl -n demo get pods`
+- Check Prometheus logs: `kubectl -n monitoring logs -l app=prometheus`
+
+**Grafana dashboard shows "No data":**
+- Wait 30 seconds for metrics to be scraped
+- Check Prometheus has data: Visit http://localhost:9090 and query `app_work_cycles_total`
+
+**Images not found:**
+- Rerun `make load-image` to ensure image is in Minikube
+
+## Comparison to kube-prometheus-stack
+
+This demo intentionally avoids the complexity of production monitoring stacks:
+
+| Feature | This Demo | kube-prometheus-stack |
+|---------|-----------|----------------------|
+| Pods | 3 | 10+ |
+| Helm | No | Yes |
+| Operator | No | Yes |
+| CRDs | No | Yes (ServiceMonitor, PodMonitor, etc.) |
+| Setup time | ~30s | ~3min |
+| Good for | Learning, demos | Production |
+
+## Learning Path
+
+This demo is designed for learning. Once you understand these basics, you can explore:
+1. **Service discovery** - Instead of static configs
+2. **Prometheus Operator** - For dynamic configuration
+3. **AlertManager** - For alerting on metrics
+4. **Long-term storage** - Remote write to systems like Thanos or Cortex
+
+## Sources
+
+Based on research and best practices from:
+- [Prometheus Operator vs Standalone](https://stackoverflow.com/questions/54771126/what-is-the-best-practice-for-deploying-prometheus-monitoring-kubernetes)
+- [Simple Prometheus Demo](https://blog.purestorage.com/purely-technical/introductory-monitoring-stack-with-prometheus-and-grafana/)
+- [Annotation-based Scraping](https://betterstack.com/community/questions/monitor-custom-kubernetes-pod-metrics-using-prometheus/)
+- [Prometheus Pod Monitoring](https://signoz.io/guides/how-to-monitor-custom-kubernetes-pod-metrics-using-prometheus/)

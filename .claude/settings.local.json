@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(minikube version:*)",
+      "Bash(minikube profile:*)",
+      "Bash(kubectl config:*)",
+      "Bash(make cluster-create:*)",
+      "Bash(kubectl get:*)",
+      "Bash(make build-images:*)",
+      "Bash(make load-images:*)",
+      "Bash(make deploy-monitoring:*)",
+      "Bash(make deploy-etl:*)",
+      "Bash(kubectl:*)",
+      "Bash(minikube ssh:*)",
+      "WebSearch",
+      "Bash(chmod:*)",
+      "Bash(minikube delete:*)",
+      "Bash(make up:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(make port-forward-grafana:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
