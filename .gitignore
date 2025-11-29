@@ -1,2 +1,6 @@
 # Claude Code local settings
 .claude/
+.continue/
+.vscode/
+.idea/
+.DS_Store
