@@ -1,7 +1,7 @@
 CLUSTER_NAME ?= demo-cluster
 MON_NS ?= monitoring
 
-TARGETS := up down cluster-create cluster-delete deploy-monitoring port-forward-grafana port-forward-prometheus
+TARGETS := up down cluster-create cluster-delete deploy-monitoring port-forward-grafana port-forward-prometheus test
 .PHONY: $(TARGETS)
 
 # One-shot setup: create cluster and deploy monitoring stack
@@ -28,3 +28,7 @@ port-forward-grafana:
 # Port-forward Prometheus to localhost:9090
 port-forward-prometheus:
 	kubectl -n $(MON_NS) port-forward svc/prometheus 9090:9090
+
+# Run test suite to validate the monitoring stack
+test:
+	./test.sh

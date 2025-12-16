@@ -85,8 +85,14 @@ spec:
         configMap:
           name: grafana-dashboards
           items:
-          - key: cluster-dashboard.json
-            path: cluster-dashboard.json
+          - key: kubernetes-views-pods.json
+            path: kubernetes-views-pods.json
+          - key: kubernetes-views-nodes.json
+            path: kubernetes-views-nodes.json
+          - key: kubernetes-views-namespaces.json
+            path: kubernetes-views-namespaces.json
+          - key: k8s-cluster-summary.json
+            path: k8s-cluster-summary.json
 ---
 apiVersion: v1
 kind: Service
